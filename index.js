@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const port = process.env.PORT || 3000;
@@ -26,7 +27,16 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const categoryCollection = client.db("perCrafterDB").collection("category");
-    const userCollection = client.db("perCrafterDB").collection("users")
+    const userCollection = client.db("perCrafterDB").collection("users");
+
+    // jwt related api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     // category related api
     app.get("/category", async (req, res) => {
@@ -34,12 +44,11 @@ async function run() {
       res.send(result);
     });
 
-
     // user related api
-    app.post('/users', async (req, res) => {
+    app.post("/users", async (req, res) => {
       const user = req.body;
 
-      const query = {email: user.email}
+      const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
 
       if (existingUser) {
@@ -47,8 +56,8 @@ async function run() {
       }
 
       const result = await userCollection.insertOne(user);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
