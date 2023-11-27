@@ -50,6 +50,24 @@ async function run() {
 
     // get pet to email based
     app.get("/pets", async (req, res) => {
+      try {
+        const search = req.query.search;
+    
+        const query = {
+          petName: { $regex: new RegExp(search, "i") },
+        };
+
+        const sortItem = { addedDate: -1 };
+    
+        const result = await petsCollection.find(query).sort(sortItem).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching pets:", error);
+        res.status(500).send({ error: "Internal Server Error" });
+      }
+    });
+
+    app.get("/pets/user", async (req, res) => {
       const email = req.query.email;
       const query = {email: email};
       const result = await petsCollection.find(query).toArray()
