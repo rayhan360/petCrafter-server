@@ -3,7 +3,7 @@ const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 3000;
 // W4rZyamF8RTnreEO petCrafter
 
@@ -28,6 +28,8 @@ async function run() {
     // await client.connect();
     const categoryCollection = client.db("perCrafterDB").collection("category");
     const userCollection = client.db("perCrafterDB").collection("users");
+    const petsCollection = client.db("perCrafterDB").collection("pets");
+    const donationCollection = client.db("perCrafterDB").collection("donation")
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -43,6 +45,65 @@ async function run() {
       const result = await categoryCollection.find().toArray();
       res.send(result);
     });
+
+    // pet related api
+
+    // get pet to email based
+    app.get("/pets", async (req, res) => {
+      const email = req.query.email;
+      const query = {email: email};
+      const result = await petsCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    app.get("/pets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await petsCollection.findOne(query)
+      res.send(result)
+    })
+
+    // post data 
+    app.post("/pets", async (req, res) => {
+      const pets = req.body;
+      const result = await petsCollection.insertOne(pets)
+      res.send(result)
+    })
+
+    app.patch("/pets/:id", async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          petImage: item.petImage,
+          petName: item.petName,
+          petAge: item.petAge,
+          petLocation: item.petLocation,
+          shortDescription: item.shortDescription,
+          longDescription: item.longDescription
+        }
+      };
+
+      const result = await petsCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
+
+    // donation campaign related api
+    app.get("/donation", async (req, res) => {
+      const email = req.query.email;
+      const query = {email: email};
+      const result = await donationCollection.find(query).toArray()
+      res.send(result)
+    })
+    
+    app.post("/donation", async (req, res) => {
+      const donation = req.body;
+      const result = await donationCollection.insertOne(donation)
+      res.send(result)
+    })
+
+
 
     // user related api
     app.post("/users", async (req, res) => {
