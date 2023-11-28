@@ -6,7 +6,6 @@ require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 3000;
-// W4rZyamF8RTnreEO petCrafter
 
 // middleware
 app.use(cors());
@@ -157,6 +156,13 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/pets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await petsCollection.deleteOne(query);
+      res.send(result)
+    })
+
     // donation campaign related api
     app.get("/donation", async (req, res) => {
       const sortItem = { addedDate: -1 };
@@ -287,7 +293,7 @@ async function run() {
     });
 
     // user related api
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
@@ -320,6 +326,18 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
+
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateData = {
+        $set: {
+          role: "admin",
+        }
+      };
+      const result = await userCollection.updateOne(filter, updateData);
+      res.send(result)
+    })
 
     // payment intent
     app.post("/create-payment-intent", async (req, res) => {
