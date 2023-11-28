@@ -43,6 +43,34 @@ async function run() {
       res.send({ token });
     });
 
+    // middlewares
+    const verifyToken = (req, res, next) => {
+      // console.log("inside toke", req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "unauthorized access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    // use verify admin after verify token
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
     // category related api
     app.get("/category", async (req, res) => {
       const result = await categoryCollection.find().toArray();
@@ -89,7 +117,7 @@ async function run() {
     });
 
     // post data
-    app.post("/pets", async (req, res) => {
+    app.post("/pets",verifyToken, async (req, res) => {
       const pets = req.body;
       const result = await petsCollection.insertOne(pets);
       res.send(result);
@@ -150,7 +178,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/donation", async (req, res) => {
+    app.post("/donation",verifyToken, async (req, res) => {
       const donation = req.body;
       const result = await donationCollection.insertOne(donation);
       res.send(result);
@@ -206,7 +234,7 @@ async function run() {
       };
 
       const result = await donationCollection.updateOne(filter, updatedDoc);
-      res.send(result)
+      res.send(result);
     });
 
     // adopt pet related api
@@ -259,9 +287,25 @@ async function run() {
     });
 
     // user related api
-    
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
 
+    app.get("/users/admin/:email",verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden acccess" });
+      }
 
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === "admin";
+      }
+      res.send({ admin });
+    });
 
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -300,10 +344,10 @@ async function run() {
 
     app.get("/payments/delete/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await paymentCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     app.get("/payments/user", async (req, res) => {
       const query = { email: req.query.email };
@@ -319,10 +363,10 @@ async function run() {
 
     app.delete("/payments/delete/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await paymentCollection.deleteOne(query);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
