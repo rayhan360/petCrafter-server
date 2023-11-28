@@ -32,7 +32,7 @@ async function run() {
     const petsCollection = client.db("perCrafterDB").collection("pets");
     const donationCollection = client.db("perCrafterDB").collection("donation");
     const adoptCollection = client.db("perCrafterDB").collection("adoptPet");
-    const paymentCollection = client.db("perCrafterDB").collection("payment")
+    const paymentCollection = client.db("perCrafterDB").collection("payment");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -131,17 +131,17 @@ async function run() {
 
     // donation campaign related api
     app.get("/donation", async (req, res) => {
-      const sortItem = {addedDate: -1}
+      const sortItem = { addedDate: -1 };
       const result = await donationCollection.find().sort(sortItem).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     app.get("/donation/request/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
-      const result = await donationCollection.findOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await donationCollection.findOne(query);
+      res.send(result);
+    });
 
     app.get("/donation/user", async (req, res) => {
       const email = req.query.email;
@@ -158,7 +158,7 @@ async function run() {
 
     app.patch("/donation/request/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
 
       const updatedDonation = {
         $set: {
@@ -166,13 +166,16 @@ async function run() {
         },
       };
 
-      const result = await donationCollection.updateOne(filter, updatedDonation);
-      res.send(result)
-    })
+      const result = await donationCollection.updateOne(
+        filter,
+        updatedDonation
+      );
+      res.send(result);
+    });
 
     app.patch("/donation/unpaused/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
 
       const updatedDonation = {
         $set: {
@@ -180,13 +183,31 @@ async function run() {
         },
       };
 
-      const result = await donationCollection.updateOne(filter, updatedDonation);
+      const result = await donationCollection.updateOne(
+        filter,
+        updatedDonation
+      );
+      res.send(result);
+    });
+
+    app.patch("/donation/updateDonation/:id", async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          petImage: item.petImage,
+          maximumAmount: item.maximumAmount,
+          petName: item.petName,
+          lastDateOfDonation: item.lastDateOfDonation,
+          shortDescription: item.shortDescription,
+          longDescription: item.longDescription,
+        },
+      };
+
+      const result = await donationCollection.updateOne(filter, updatedDoc);
       res.send(result)
-    })
-
-    
-
-
+    });
 
     // adopt pet related api
     app.get("/adopt", async (req, res) => {
@@ -238,6 +259,10 @@ async function run() {
     });
 
     // user related api
+    
+
+
+
     app.post("/users", async (req, res) => {
       const user = req.body;
 
@@ -251,7 +276,6 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result);
     });
-
 
     // payment intent
     app.post("/create-payment-intent", async (req, res) => {
@@ -271,15 +295,21 @@ async function run() {
 
     app.get("/payments", async (req, res) => {
       const result = await paymentCollection.find().toArray();
-      res.send(result)
-    }) 
-    
+      res.send(result);
+    });
+
+    app.get("/payments/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await paymentCollection.findOne(query);
+      res.send(result);
+    })
 
     app.get("/payments/user", async (req, res) => {
-      const query = {email: req.query.email};
-      const result = await paymentCollection.find(query).toArray()
-      res.send(result)
-    })
+      const query = { email: req.query.email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
 
     app.post("/payments", async (req, res) => {
       const payment = req.body;
@@ -287,6 +317,12 @@ async function run() {
       res.send(paymentResult);
     });
 
+    app.delete("/payments/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await paymentCollection.deleteOne(query);
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
