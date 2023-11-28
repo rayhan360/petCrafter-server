@@ -110,7 +110,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/pets/:id", async (req, res) => {
+    app.patch("/pets/updateAll/:id", async (req, res) => {
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -136,6 +136,13 @@ async function run() {
       res.send(result)
     })
 
+    app.get("/donation/request/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await donationCollection.findOne(query)
+      res.send(result)
+    })
+
     app.get("/donation/user", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -148,6 +155,38 @@ async function run() {
       const result = await donationCollection.insertOne(donation);
       res.send(result);
     });
+
+    app.patch("/donation/request/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+
+      const updatedDonation = {
+        $set: {
+          pausedStatus: true,
+        },
+      };
+
+      const result = await donationCollection.updateOne(filter, updatedDonation);
+      res.send(result)
+    })
+
+    app.patch("/donation/unpaused/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+
+      const updatedDonation = {
+        $set: {
+          pausedStatus: false,
+        },
+      };
+
+      const result = await donationCollection.updateOne(filter, updatedDonation);
+      res.send(result)
+    })
+
+    
+
+
 
     // adopt pet related api
     app.get("/adopt", async (req, res) => {
@@ -233,7 +272,7 @@ async function run() {
     app.get("/payments", async (req, res) => {
       const result = await paymentCollection.find().toArray();
       res.send(result)
-    })
+    }) 
     
 
     app.get("/payments/user", async (req, res) => {
