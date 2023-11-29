@@ -101,6 +101,11 @@ async function run() {
       }
     });
 
+    app.get("/pets/allPets", async (req, res) => {
+      const result = await petsCollection.find().toArray();
+      res.send(result)
+    })
+
     app.get("/pets/user", async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
@@ -243,11 +248,25 @@ async function run() {
       res.send(result);
     });
 
+    app.delete("/donation/request/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await donationCollection.deleteOne(query);
+      res.send(result)
+    })
+
     // adopt pet related api
     app.get("/adopt", async (req, res) => {
       const result = await adoptCollection.find().toArray();
       res.send(result);
     });
+
+    app.get("/adopt/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await adoptCollection.findOne(query)
+      res.send(result);
+    })
 
     app.patch("/adopt/:id/accept", async (req, res) => {
       try {
@@ -291,6 +310,13 @@ async function run() {
       const result = await adoptCollection.insertOne(adoption);
       res.send(result);
     });
+
+    app.delete("/adopt/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await adoptCollection.deleteOne(query);
+      res.send(result);
+    })
 
     // user related api
     app.get("/users",verifyToken, verifyAdmin, async (req, res) => {
@@ -387,10 +413,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
